@@ -1,0 +1,11 @@
+/.cursor
+/.vscode
+/PhyreUnpacker/PhyreEngine
+/PhyreEngine
+# Build directories
+x64/
+x86/
+Debug/
+Release/
+# Visual Studio files
+.vs/
