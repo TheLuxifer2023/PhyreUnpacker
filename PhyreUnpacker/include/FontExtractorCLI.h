@@ -76,6 +76,45 @@ namespace PhyreUnpacker {
          */
         void printProgress(size_t current, size_t total, const std::string& itemName) const;
 
+        /**
+         * @brief Compare two .fgen files and write a report into output directory
+         * @param originalFgen Path to original .fgen
+         * @param modifiedFgen Path to modified .fgen (after Phyre Font Editor)
+         * @param outputDir Output directory for report
+         * @return true if comparison was successful (files parsed), false otherwise
+         */
+        bool compareFgenFiles(const std::string &originalFgen, const std::string &modifiedFgen, const std::string &outputDir);
+
+        /**
+         * @brief Repack .phyre with font data (stub; not implemented yet)
+         * @return false always (until implemented)
+         */
+        bool repackPhyreFile();
+
+        /**
+         * @brief Compare two binary files byte-by-byte and report differences
+         * @param file1Path Path to first file
+         * @param file2Path Path to second file
+         * @param outputDir Output directory for report
+         * @return true if comparison was successful, false otherwise
+         */
+        bool compareBinaryDumps(const std::string& file1Path, const std::string& file2Path, const std::string& outputDir);
+
+        /**
+         * @brief Analyze file header to check if it can be loaded by PhyreEngine
+         * @param filePath Path to file to analyze
+         * @return true if analysis was successful, false otherwise
+         */
+        bool analyzeFileHeader(const std::string& filePath);
+
+        /**
+         * @brief Extract OFS3 archive
+         * @param archivePath Path to .l2b archive
+         * @param outputDirectory Output directory for extracted files
+         * @return true if extraction successful, false otherwise
+         */
+        bool extractOFS3Archive(const std::string& archivePath, const std::string& outputDirectory);
+
     private:
         struct Arguments {
             std::string inputFile;      ///< Input .phyre file
@@ -85,6 +124,23 @@ namespace PhyreUnpacker {
             bool verbose;               ///< Verbose output
             bool help;                  ///< Show help
             bool version;               ///< Show version
+            bool compareFgen;           ///< Compare two .fgen files instead of extracting
+            std::string compareFgenOriginal; ///< Path to original .fgen
+            std::string compareFgenModified; ///< Path to modified .fgen
+            bool repackPhyre;           ///< Repack to .phyre mode (stub)
+            std::string repackSourcePhyre;   ///< Source .phyre to base on
+            std::string repackOutPhyre;      ///< Output .phyre path
+            std::string repackFgenPath;      ///< Optional .fgen to use
+            bool repackKeepAtlas;            ///< Keep original atlas/UVs
+            std::string repackTtfName;       ///< Optional TTF name override
+            bool repackOnlyListed;           ///< Replace only glyphs listed in .fgen
+            bool compareBinaryDumps;         ///< Compare two binary files byte-by-byte
+            std::string binaryDumpFile1;     ///< First file for binary comparison
+            std::string binaryDumpFile2;     ///< Second file for binary comparison
+            bool analyzeFile;                ///< Analyze file header mode
+            std::string analyzeFilePath;     ///< Path to file to analyze
+            bool extractOFS3;                ///< Extract OFS3 archive mode
+            std::string extractOFS3Archive;  ///< Path to OFS3 archive to extract
         };
 
         Arguments m_args;               ///< Parsed arguments

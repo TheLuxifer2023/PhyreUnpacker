@@ -70,13 +70,16 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <VcpkgEnabled>false</VcpkgEnabled>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(UniversalCRT_IncludePath);$(WindowsSdkDir)Include\$(WindowsTargetPlatformVersion)\ucrt;$(WindowsSdkDir)Include\$(WindowsTargetPlatformVersion)\shared;$(WindowsSdkDir)Include\$(WindowsTargetPlatformVersion)\um;$(ProjectDir)..\PhyreEngine\Include;$(ProjectDir)..\PhyreEngine\External;$(ProjectDir)..\PhyreEngine\External\Bullet\src;$(ProjectDir)..\PhyreEngine\External\freetype\include;$(ProjectDir)..\PhyreEngine\External\WinSDK;$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(UniversalCRT_IncludePath);$(WindowsSdkDir)Include\$(WindowsTargetPlatformVersion)\ucrt;$(WindowsSdkDir)Include\$(WindowsTargetPlatformVersion)\shared;$(WindowsSdkDir)Include\$(WindowsTargetPlatformVersion)\um;$(ProjectDir)..\PhyreEngine\Include;$(ProjectDir)..\PhyreEngine\External;$(ProjectDir)..\PhyreEngine\External\Bullet\src;$(ProjectDir)..\PhyreEngine\External\freetype\include;$(ProjectDir)..\PhyreEngine\External\WinSDK;C:\Program Files (x86)\NVIDIA Corporation\Cg\include;$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -94,7 +97,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(UniversalCRT_IncludePath);$(WindowsSdkDir)Include\$(WindowsTargetPlatformVersion)\ucrt;$(WindowsSdkDir)Include\$(WindowsTargetPlatformVersion)\shared;$(WindowsSdkDir)Include\$(WindowsTargetPlatformVersion)\um;$(ProjectDir)..\PhyreEngine\Include;$(ProjectDir)..\PhyreEngine\External;$(ProjectDir)..\PhyreEngine\External\Bullet\src;$(ProjectDir)..\PhyreEngine\External\freetype\include;$(ProjectDir)..\PhyreEngine\External\WinSDK;$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(UniversalCRT_IncludePath);$(WindowsSdkDir)Include\$(WindowsTargetPlatformVersion)\ucrt;$(WindowsSdkDir)Include\$(WindowsTargetPlatformVersion)\shared;$(WindowsSdkDir)Include\$(WindowsTargetPlatformVersion)\um;$(ProjectDir)..\PhyreEngine\Include;$(ProjectDir)..\PhyreEngine\External;$(ProjectDir)..\PhyreEngine\External\Bullet\src;$(ProjectDir)..\PhyreEngine\External\freetype\include;$(ProjectDir)..\PhyreEngine\External\WinSDK;C:\Program Files (x86)\NVIDIA Corporation\Cg\include;$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -108,17 +111,17 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;PHYRE_PLATFORM_WIN32;PHYRE_TOOL_BUILD;PHYRE_DO_NOT_AUTO_LINK_CORE;WIN32_LEAN_AND_MEAN;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;PHYRE_PLATFORM_WIN32;PHYRE_TOOL_BUILD;PHYRE_RENDERING_PLATFORM_D3D11;PHYRE_DO_NOT_AUTO_LINK_CORE;WIN32_LEAN_AND_MEAN;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(UniversalCRT_IncludePath);$(WindowsSdkDir)Include\$(WindowsTargetPlatformVersion)\ucrt;$(WindowsSdkDir)Include\$(WindowsTargetPlatformVersion)\shared;$(WindowsSdkDir)Include\$(WindowsTargetPlatformVersion)\um;$(ProjectDir)..\PhyreEngine\Include;$(ProjectDir)..\PhyreEngine\External;$(ProjectDir)..\PhyreEngine\External\Bullet\src;$(ProjectDir)..\PhyreEngine\External\freetype\include;$(ProjectDir)..\PhyreEngine\External\WinSDK;$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(UniversalCRT_IncludePath);$(WindowsSdkDir)Include\$(WindowsTargetPlatformVersion)\ucrt;$(WindowsSdkDir)Include\$(WindowsTargetPlatformVersion)\shared;$(WindowsSdkDir)Include\$(WindowsTargetPlatformVersion)\um;$(ProjectDir)..\PhyreEngine\Include;$(ProjectDir)..\PhyreEngine\External;$(ProjectDir)..\PhyreEngine\External\Bullet\src;$(ProjectDir)..\PhyreEngine\External\freetype\include;$(ProjectDir)..\PhyreEngine\External\WinSDK;C:\Program Files (x86)\NVIDIA Corporation\Cg\include;$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)..\PhyreEngine\Core\x64\ToolDebug;$(ProjectDir)..\PhyreEngine\DeveloperExtensions\x64\ToolDebug;$(ProjectDir)..\PhyreEngine\Lib\Win64\vs2019;C:\Program Files (x86)\NVIDIA Corporation\Cg\lib.x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>PhyreCoreToolD.lib;PhyreDeveloperExtensionsToolD.lib;luaD.lib;cg.lib;cgGL.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <AdditionalLibraryDirectories>$(ProjectDir)..\PhyreEngine\Core\x64\ToolDebug;$(ProjectDir)..\PhyreEngine\DeveloperExtensions\x64\ToolDebug;$(ProjectDir)..\PhyreEngine\Tools;$(ProjectDir)..\PhyreEngine\Lib\Win64\vs2019;C:\Program Files (x86)\NVIDIA Corporation\Cg\lib.x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>PhyreCoreToolD.lib;PhyreDeveloperExtensionsToolD.lib;PhyreAssetProcessorD.lib;luaD.lib;cg.lib;cgGL.lib;opengl32.lib;gdiplus.lib;freetypeD.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>Effects11.lib;BulletCollision.lib;BulletDynamics.lib;LinearMath.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -129,7 +132,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;PHYRE_PLATFORM_WIN32;PHYRE_RENDERING_PLATFORM_D3D11;WIN32_LEAN_AND_MEAN;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(UniversalCRT_IncludePath);$(WindowsSdkDir)Include\$(WindowsTargetPlatformVersion)\ucrt;$(WindowsSdkDir)Include\$(WindowsTargetPlatformVersion)\shared;$(WindowsSdkDir)Include\$(WindowsTargetPlatformVersion)\um;$(ProjectDir)..\PhyreEngine\Include;$(ProjectDir)..\PhyreEngine\External;$(ProjectDir)..\PhyreEngine\External\Bullet\src;$(ProjectDir)..\PhyreEngine\External\freetype\include;$(ProjectDir)..\PhyreEngine\External\WinSDK;$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(UniversalCRT_IncludePath);$(WindowsSdkDir)Include\$(WindowsTargetPlatformVersion)\ucrt;$(WindowsSdkDir)Include\$(WindowsTargetPlatformVersion)\shared;$(WindowsSdkDir)Include\$(WindowsTargetPlatformVersion)\um;$(ProjectDir)..\PhyreEngine\Include;$(ProjectDir)..\PhyreEngine\External;$(ProjectDir)..\PhyreEngine\External\Bullet\src;$(ProjectDir)..\PhyreEngine\External\freetype\include;$(ProjectDir)..\PhyreEngine\External\WinSDK;C:\Program Files (x86)\NVIDIA Corporation\Cg\include;$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -143,10 +146,18 @@
     <ClCompile Include="PhyreUnpacker.cpp" />
     <ClCompile Include="src\FontExtractorCLI.cpp" />
     <ClCompile Include="src\PhyreFontExtractor.cpp" />
+    <ClCompile Include="src\PhyreFontRepacker.cpp" />
+    <ClCompile Include="src\PhyreFileAnalyzer.cpp" />
+    <ClCompile Include="src\PhyreOFS3Unpacker.cpp" />
+    <ClCompile Include="src\PhyreRawDataAnalyzer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\FontExtractorCLI.h" />
     <ClInclude Include="include\PhyreFontExtractor.h" />
+    <ClInclude Include="include\PhyreFontRepacker.h" />
+    <ClInclude Include="include\PhyreFileAnalyzer.h" />
+    <ClInclude Include="include\PhyreOFS3Unpacker.h" />
+    <ClInclude Include="include\PhyreRawDataAnalyzer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

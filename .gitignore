@@ -9,3 +9,14 @@ Debug/
 Release/
 # Visual Studio files
 .vs/
+out47/font00.fgen.phyre
+new 9.txt
+out/font00.fgen_characters.json
+out/font00.fgen_metadata.xml
+out/font00.fgen_overlay.ppm
+out/font00.fgen_texture.ppm
+out/font00.fgen_validate.txt
+out/font00.fgen.fgen
+out/PlaywriteDESAS-Regular.ttf
+out/referenced_fgen_id.txt
+font00.fgen.phyre

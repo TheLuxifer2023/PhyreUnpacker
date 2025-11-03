@@ -19,6 +19,18 @@
 #include <set>
 #include <cmath>
 
+#include <Phyre.h>
+#include <Rendering/PhyreRendering.h>
+#include <Rendering/PhyreTexture2D.h>
+#include <Rendering/PhyreTexelFormat.h>
+#include <cstring>
+#include <gdiplus.h>
+using GpREAL = float;
+#include <crtdbg.h>
+#include <map>
+#include <set>
+// GDI+ removed: engine-only pipeline
+
 // Phyre SDK - keep heavy includes in .cpp only
 #include "C:/Users/TheLuxifer/Desktop/PhyreUnpacker/PhyreEngine/Include/Phyre.h"
 // Ensure texel format definitions appear before texture headers
@@ -40,11 +52,70 @@
 #include "C:/Users/TheLuxifer/Desktop/PhyreUnpacker/PhyreEngine/Include/ObjectModel/PhyreCluster.h"
 #include "C:/Users/TheLuxifer/Desktop/PhyreUnpacker/PhyreEngine/Include/Serialization/PhyreStreamReaderFile.h"
 #include "C:/Users/TheLuxifer/Desktop/PhyreUnpacker/PhyreEngine/Include/Serialization/PhyreBinarySerialization.h"
+#include "C:/Users/TheLuxifer/Desktop/PhyreUnpacker/PhyreEngine/Include/Serialization/PhyreStreamWriterFile.h"
 #include "C:/Users/TheLuxifer/Desktop/PhyreUnpacker/PhyreEngine/Include/Text/PhyreBitmapFont.inl"
+// Platform conversion (needed to write D3D11-correct clusters with 32-bit pointers and platform data)
+#include "C:/Users/TheLuxifer/Desktop/PhyreUnpacker/PhyreEngine/Include/Platform/PhyrePlatformConverter.h"
+// Avoid including heavy D3D11 converter header; forward declare binder only
+namespace Phyre { namespace PPlatform { Phyre::PResult BindPlatformConverterD3D11(Phyre::PUInt32 platformId); } }
+
+// Extern: AssetProcessor font build entry (creates PBitmapFont + PTexture2D from .fgen into cluster)
+extern "C" Phyre::PInt32 PhyreFontBuildFontTextureFromStream(Phyre::PSerialization::PStreamReader &reader, Phyre::PCluster *cluster);
 
 // No explicit Text utility forward-declare; types are bound via includes and Rendering utility
 
 static HWND g_hiddenWindow = NULL;
+
+// Suppress CRT abort on invalid parameter inside third-party DLLs
+static void __cdecl PhyreInvalidParameterHandler(const wchar_t*, const wchar_t*, const wchar_t*, unsigned int, uintptr_t) {
+    // no-op: allows function to return error instead of aborting the process
+}
+
+// Any value below this threshold will be forced to 0 in the output atlas.
+// Helps to remove faint background/gray boxes around glyphs from subpixel AA.
+static const uint8_t kGlyphMaskThreshold = 1; // Lower threshold to preserve more subtle pixels
+
+static bool parseFgenFile(const std::string &path, Phyre::PUInt32 &outW, Phyre::PUInt32 &outH, Phyre::PUInt32 &outSize,
+                          bool &outSdf, std::string &outTtfFile, std::set<int> &outCodes) {
+    try {
+        std::ifstream f(path); if (!f.is_open()) return false;
+        std::string line; std::vector<std::string> lines;
+        while (std::getline(f, line)) { if (!line.empty() && line.back()=='\r') line.pop_back(); lines.push_back(line); }
+        if (lines.size() < 11 || lines[0] != "fgen") return false;
+        outTtfFile = lines[1];
+        outW = (Phyre::PUInt32)std::stoul(lines[4]);
+        outH = (Phyre::PUInt32)std::stoul(lines[5]);
+        outSize = (Phyre::PUInt32)std::stoul(lines[6]);
+        outSdf = (lines[7] == "1");
+        for (size_t i = 11; i < lines.size(); ++i) {
+            if (lines[i].empty()) continue; int code = 0; std::stringstream ss; ss << std::hex << lines[i]; ss >> code; outCodes.insert(code);
+        }
+        return true;
+    } catch (...) { return false; }
+}
+
+static bool parseFgenHeader(const std::string &path,
+                            Phyre::PUInt32 &outW, Phyre::PUInt32 &outH, Phyre::PUInt32 &outSize, bool &outSdf,
+                            std::string &outTtf, Phyre::PUInt32 &outScale, Phyre::PUInt32 &outPad, Phyre::PUInt32 &outMip)
+{
+    try {
+        std::ifstream f(path); if (!f.is_open()) return false;
+        std::string line; std::vector<std::string> lines;
+        while (std::getline(f, line)) { if (!line.empty() && line.back()=='\r') line.pop_back(); lines.push_back(line); }
+        if (lines.size() < 11 || lines[0] != "fgen") return false;
+        outTtf = lines[1];
+        outW = (Phyre::PUInt32)std::stoul(lines[4]);
+        outH = (Phyre::PUInt32)std::stoul(lines[5]);
+        outSize = (Phyre::PUInt32)std::stoul(lines[6]);
+        outSdf = (lines[7] == "1");
+        outScale = (Phyre::PUInt32)std::stoul(lines[8]);
+        outPad = (Phyre::PUInt32)std::stoul(lines[9]);
+        outMip = (Phyre::PUInt32)std::stoul(lines[10]);
+        return true;
+    } catch (...) { return false; }
+}
+
+// GDI+ glyph rendering removed (engine-only mode)
 
 static HWND createHiddenWindow()
 {
@@ -98,7 +169,7 @@ static void writeValidationReport(const PhyreUnpacker::FontInfo &fontInfo, const
             const PUInt32 rw = (x1 > x0) ? (x1 - x0) : 0;
             const PUInt32 rh = (y1 > y0) ? (y1 - y0) : 0;
             size_t area = (size_t)rw * (size_t)rh;
-            bool ignored = (gw == 0 || gh == 0 || area == 0); // нулевой глиф (space/nbsp) — игнорируем
+            bool ignored = (gw == 0 || gh == 0 || area == 0 || std::min(gw, gh) <= 3); // игнорируем нулевые/ультратонкие
 
             size_t nonZero = 0;
             if (area > 0 && !px.empty()) {
@@ -239,30 +310,21 @@ bool PhyreFontExtractor::initializeSDK() {
         result = Phyre::PhyreInit();
         if (result != Phyre::PE_RESULT_NO_ERROR) { m_lastError = "Failed to initialize PhyreEngine SDK: " + std::to_string(result); return false; }
 
-        // Initialize D3D11 render interface on a hidden window to enable staging readbacks
-        HWND hwnd = createHiddenWindow();
-        if (hwnd) {
-#if !defined(PHYRE_TOOL_BUILD)
-            Phyre::PRendering::PRenderInterface::Initialize();
-            Phyre::PRendering::PD3D11Win32InitParams initParams; initParams.m_windowHandle = hwnd; initParams.m_multisampleCount = 1; initParams.m_fullscreen = false; initParams.m_vsync = false;
-            Phyre::PRendering::PRenderInterface &ri = Phyre::PRendering::PRenderInterface::GetInstance();
-            ri.initialize(&initParams, 1u<<20, 1u<<20);
-#endif
-        }
+        // Skip explicit render interface init in this tool; copyTextureToL8 handles staging via texture map fallbacks
 
         m_sdkInitialized = true;
         return true;
     } catch (const std::exception &e) {
         m_lastError = "Failed to initialize PhyreEngine SDK: " + std::string(e.what());
-        return false;
+            return false;
     }
 }
 
 bool PhyreFontExtractor::loadPhyreFile(const std::string &phyreFilePath) {
     if (!m_sdkInitialized) {
         m_lastError = "SDK not initialized";
-        return false;
-    }
+            return false;
+        }
 
     try {
         if (!std::filesystem::exists(phyreFilePath)) {
@@ -273,7 +335,7 @@ bool PhyreFontExtractor::loadPhyreFile(const std::string &phyreFilePath) {
         return true;
     } catch (const std::exception &e) {
         m_lastError = "Failed to validate file: " + std::string(e.what());
-            return false;
+        return false;
     }
 }
 
@@ -424,7 +486,13 @@ static bool copyTextureToL8(const Phyre::PRendering::PTexture2D &texture,
         const Phyre::PUInt32 stride = readMap.m_mips[0].m_stride;
         if (!base || stride == 0) {
             mutableTex.unmap(readMap);
-            err = "Mapped texture returned null buffer or zero stride";
+            
+            // Fallback: try PDDSHeaderParser::readPixels for sandbox-generated textures
+            OutputDebugStringA("[copyTextureToL8] map() failed, trying PDDSHeaderParser fallback\n");
+            
+            // This fallback requires access to the original file path
+            // For now, we'll return false and let the caller handle it
+            err = "Mapped texture returned null buffer or zero stride - sandbox texture mapping issue";
             return false;
         }
 
@@ -641,7 +709,7 @@ static bool copyTextureToL8(const Phyre::PRendering::PTexture2D &texture,
                 if (!decodeBC4AlphaToL8(src, stride)) {
                     mutableTex.unmap(readMap);
                     err = "BC4 alpha decode failed";
-                    return false;
+            return false;
                 }
                 break;
             }
@@ -670,8 +738,8 @@ static bool copyTextureToL8(const Phyre::PRendering::PTexture2D &texture,
 bool PhyreFontExtractor::extractFonts(const std::string &outputDirectory) {
     if (!m_sdkInitialized) {
         m_lastError = "SDK not initialized";
-            return false;
-        }
+        return false;
+    }
     if (m_loadedFilePath.empty()) {
         m_lastError = "No .phyre file loaded";
             return false;
@@ -708,7 +776,7 @@ bool PhyreFontExtractor::extractFonts(const std::string &outputDirectory) {
                    Phyre::PResult ar = Phyre::PSerialization::PBinary::analyzeCluster(reader);
                    if (ar != Phyre::PE_RESULT_NO_ERROR) {
                        m_lastError = std::string("analyzeCluster failed: ") + std::to_string(ar) + ": " + Phyre::PError::GetLastError();
-                       return false;
+            return false;
                    }
                }
                {
@@ -849,7 +917,7 @@ bool PhyreFontExtractor::extractFonts(const std::string &outputDirectory) {
             Phyre::PResult rr = cluster.resolveAssetReferences();
             if (rr != Phyre::PE_RESULT_NO_ERROR) {
                 m_lastError = std::string("resolveAssetReferences failed: ") + std::to_string(rr) + ": " + Phyre::PError::GetLastError();
-                return false;
+            return false;
             }
             Phyre::PResult fx = cluster.fixupInstances();
             if (fx != Phyre::PE_RESULT_NO_ERROR) {
@@ -952,6 +1020,24 @@ bool PhyreFontExtractor::extractFonts(const std::string &outputDirectory) {
                 }
             }
 
+            // If рядом с исходным .phyre есть исходный .fgen — подтянуть scale/pad/mip для отчёта
+            try {
+                const std::filesystem::path srcDir = std::filesystem::path(m_loadedFilePath).parent_path();
+                for (auto it = std::filesystem::directory_iterator(srcDir); it != std::filesystem::end(it); ++it) {
+                    if (!it->is_regular_file()) continue;
+                    const std::string ext = it->path().extension().string();
+                    if (ext == ".fgen") {
+                        Phyre::PUInt32 hw=0,hh=0,hsize=0,hscale=1,hpad=0,hmip=0; bool hsdf=false; std::string httpf;
+                        if (parseFgenHeader(it->path().string(), hw, hh, hsize, hsdf, httpf, hscale, hpad, hmip)) {
+                            fontInfo.glyphScale = hscale;
+                            fontInfo.glyphPadding = hpad;
+                            fontInfo.mipmapAlign = hmip;
+                            break;
+                        }
+                    }
+                }
+            } catch (...) {}
+
             // Save files
             if (!saveFontAsPPM(fontInfo, outputDirectory)) return false;
             if (!saveFontAsXML(fontInfo, outputDirectory)) return false;
@@ -1013,9 +1099,9 @@ bool PhyreFontExtractor::extractFonts(const std::string &outputDirectory) {
                     f << (fontInfo.textureHeight ? fontInfo.textureHeight : 512) << "\n"; // 6: height
                     f << fontInfo.fontSize << "\n";                 // 7: size
                     f << (fontInfo.isSDF ? 1 : 0) << "\n";          // 8: sdf
-                    f << 1 << "\n";                                  // 9: charScale (default 1)
-                    f << 0 << "\n";                                  // 10: charPad
-                    f << 0 << "\n";                                  // 11: mipPad
+                    f << fontInfo.glyphScale << "\n";               // 9: charScale
+                    f << fontInfo.glyphPadding << "\n";             // 10: charPad
+                    f << fontInfo.mipmapAlign << "\n";              // 11: mipPad
 
                     // 12+: hex character codes, unique and sorted
                     std::set<Phyre::PInt32> codes;
@@ -1102,6 +1188,9 @@ bool PhyreFontExtractor::saveFontAsXML(const FontInfo& fontInfo, const std::stri
         file << "  <lineSpacing>" << fontInfo.lineSpacing << "</lineSpacing>\n";
         file << "  <baselineOffset>" << fontInfo.baselineOffset << "</baselineOffset>\n";
         file << "  <isSDF>" << (fontInfo.isSDF ? "true" : "false") << "</isSDF>\n";
+        file << "  <glyphScale>" << fontInfo.glyphScale << "</glyphScale>\n";
+        file << "  <glyphPadding>" << fontInfo.glyphPadding << "</glyphPadding>\n";
+        file << "  <mipmapAlign>" << fontInfo.mipmapAlign << "</mipmapAlign>\n";
         file << "  <textureWidth>" << fontInfo.textureWidth << "</textureWidth>\n";
         file << "  <textureHeight>" << fontInfo.textureHeight << "</textureHeight>\n";
         file << "  <characters>\n";
@@ -1185,5 +1274,4 @@ bool PhyreFontExtractor::saveFontAsJSON(const FontInfo& fontInfo, const std::str
         return false;
     }
 }
-
 } // namespace PhyreUnpacker

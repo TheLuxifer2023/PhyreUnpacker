@@ -46,6 +46,9 @@ namespace PhyreUnpacker {
         float lineSpacing;                ///< Distance between lines
         float baselineOffset;             ///< Baseline offset
         bool isSDF;                       ///< Whether font uses SDF rendering
+        PUInt32 glyphScale = 1;           ///< Glyph scale from .fgen header (line 9)
+        PUInt32 glyphPadding = 0;         ///< Glyph padding from .fgen header (line 10)
+        PUInt32 mipmapAlign = 0;          ///< Mipmap align from .fgen header (line 11)
         PUInt32 textureWidth;            ///< Width of font texture
         PUInt32 textureHeight;           ///< Height of font texture
         std::vector<PUInt8> pixelData;   ///< Pixel data (L8 format)
@@ -88,6 +91,21 @@ namespace PhyreUnpacker {
          * @return true if extraction successful, false otherwise
          */
         bool extractFonts(const std::string& outputDirectory);
+
+        /**
+         * @brief Repack a .phyre font: replace subset of glyphs from new .fgen keeping original atlas size
+         * @param sourcePhyre Path to source .phyre (original)
+         * @param outPhyre Path to output .phyre
+         * @param fgenPath Path to .fgen with new TTF/charset
+         * @param onlyListed If true, replace only glyphs listed in .fgen; others stay untouched
+         * @param overrideTtfName Optional override for TTF name in fgen header (empty to keep)
+         * @return true on success, false otherwise
+         */
+        bool repackPhyre(const std::string &sourcePhyre,
+                         const std::string &outPhyre,
+                         const std::string &fgenPath,
+                         bool onlyListed,
+                         const std::string &overrideTtfName);
 
         /**
          * @brief Get last error message
