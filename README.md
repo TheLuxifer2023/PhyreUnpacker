@@ -144,11 +144,59 @@
 
 ## Использование
 
-### Извлечение шрифта
+### Синтаксис командной строки
+
+```bash
+PhyreUnpacker [options] <input_file>
+PhyreUnpacker --batch [options]
 ```
-PhyreUnpacker.exe -i "path\to\neuropol.fgen.phyre" -o "out" --verbose
+
+### Основные опции
+
+| Опция | Описание |
+|-------|----------|
+| `-h, --help` | Показать справку по использованию |
+| `-v, --version` | Показать информацию о версии |
+| `-i, --input <file>` | Входной `.phyre` файл |
+| `-d, --input-dir <dir>` | Входная директория (пакетный режим) |
+| `-o, --output <dir>` | Выходная директория |
+| `-b, --batch` | Включить пакетный режим обработки |
+| `--verbose` | Включить подробный вывод |
+
+### Анализ и сравнение
+
+| Опция | Описание |
+|-------|----------|
+| `-a, --analyze <file>` | Анализировать заголовок файла для проверки, может ли он быть загружен PhyreEngine |
+| `--compare-fgen <orig.fgen> <mod.fgen>` | Сравнить два `.fgen` файла и записать отчёт в `--output` |
+| `--compare-binary-dumps <file1> <file2>` | Сравнить два бинарных файла побайтово |
+
+### Работа с архивами
+
+| Опция | Описание |
+|-------|----------|
+| `--extract-ofs3, --extract-l2b <archive>` | Извлечь OFS3 архив (`.l2b` файл) |
+
+### Переупаковка шрифтов
+
+| Опция | Описание |
+|-------|----------|
+| `--repack-phyre` | Переупаковать в `.phyre` |
+| `--repack-source <src.phyre>` | Исходный `.phyre` файл для базирования |
+| `--repack-out <out.phyre>` | Путь выходного `.phyre` файла |
+| `--repack-fgen <file.fgen>` | Опциональный `.fgen` для использования (имя TTF/набор символов) |
+| `--repack-keep-atlas` | Сохранить оригинальную структуру атласа/UV (по умолчанию включено) |
+| `--repack-only-listed` | Заменять только глифы, перечисленные в `.fgen` |
+| `--repack-ttf-name <TTF.ttf>` | Переопределить имя TTF в заголовке `.fgen` |
+
+### Примеры использования
+
+#### Извлечение шрифта
+```bash
+PhyreUnpacker font00.fgen.phyre -o ./output
+PhyreUnpacker -i font00.fgen.phyre -o ./output --verbose
 ```
-Результат в `out/`:
+**Результат в `output/`:**
 - `*_texture.ppm` — атлас шрифта (L8 → RGB PPM)
 - `*_metadata.xml` — размеры, SDF, lineSpacing, baseline
 - `*_characters.json` — глифы/UV/offset/advance/кернинг
@@ -157,33 +205,27 @@ PhyreUnpacker.exe -i "path\to\neuropol.fgen.phyre" -o "out" --verbose
 - `*_overlay.ppm` — подсветка проблемных прямоугольников (фиолетовый — OOB, красный — пусто, жёлтый — sparse)
 - (если найден внешний `.fgen`) копия `.fgen` и `<name>.ttf.name.txt` — строка 2 `.fgen` (путь TTF)
 
-### Переупаковка шрифта с новым TTF
+#### Пакетная обработка
+```bash
+PhyreUnpacker --batch -d ./fonts -o ./extracted
 ```
+
+#### Переупаковка шрифта
+```bash
 PhyreUnpacker.exe --repack-phyre --repack-source "font00.fgen.phyre" --repack-out "out47\font00.fgen.phyre" --repack-fgen "nwe90.fgen" --repack-only-listed
 ```
-
-**Параметры переупаковки:**
-- `--repack-source <src.phyre>` — исходный `.phyre` файл со шрифтом
-- `--repack-out <out.phyre>` — путь для сохранения переупакованного файла
-- `--repack-fgen <file.fgen>` — `.fgen` файл с новым TTF шрифтом и списком символов для замены
-- `--repack-only-listed` — заменять только символы из `.fgen`, остальные оставить оригинальными
-- `--repack-keep-atlas` — сохранить оригинальную структуру атласа (по умолчанию)
-- `--repack-ttf-name <TTF.ttf>` — переопределить имя TTF в заголовке `.fgen`
-
 **Результат:** новый `.phyre` файл с заменёнными глифами из TTF, готовый к использованию в игре.
 
-### Работа с архивами
+#### Работа с архивами
+```bash
+PhyreUnpacker --analyze file.l2b                    # Анализировать заголовок .l2b файла
+PhyreUnpacker --extract-ofs3 file.l2b -o ./extracted  # Извлечь .l2b архив
 ```
-PhyreUnpacker.exe --extract-ofs3 level.l2b -o ./output --verbose
-```
-Извлекает файлы из OFS3 архива в указанную директорию.
 
+#### Сравнение файлов
+```bash
+PhyreUnpacker --compare-fgen a.fgen b.fgen -o ./report
 ```
-PhyreUnpacker.exe --analyze file.phyre
-```
-Анализирует заголовок файла для определения типа, платформы и формата.
-
-**Результат:** распакованные файлы в указанной директории.
 
 ---
 
