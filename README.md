@@ -82,7 +82,7 @@
 ### Требования
 - Windows 10/11 x64
 - Visual Studio 2022
-- PhyreEngine SDK 3.26.0.0 (дерево `PhyreEngine` доступно рядом с проектом)
+- PhyreEngine SDK 3.26.0.0 (https://drive.google.com/file/d/1R1GeQszL6dMCHjk2yWSP9xvF9dcCFqDb/view?usp=sharing)
 - NVIDIA Cg 3.1 Toolkit (x64): `C:\Program Files (x86)\NVIDIA Corporation\Cg\lib.x64\cg.lib`, `cgGL.lib`
 - Windows SDK (для `opengl32.lib`)
 - (желательно) переменная окружения `SCE_PHYRE` указывает на корень SDK
